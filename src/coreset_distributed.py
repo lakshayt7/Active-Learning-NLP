@@ -10,23 +10,15 @@ import math
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModel, TextClassificationPipeline
 import wandb
-import numpy as np
 import pandas as pd
 
 import torch
 
-from sentence_transformers import SentenceTransformer, models
-
-from datasets import load_dataset, DatasetDict
-from datasets.formatting.formatting import LazyBatch
-from transformers import PreTrainedTokenizerFast
 
 import numpy as np
 import pdb
 
-from sklearn.cluster import KMeans
 
-from sklearn.neighbors import NearestNeighbors
 import pickle
 from datetime import datetime
 from sklearn.metrics import pairwise_distances
@@ -37,17 +29,18 @@ import matplotlib.pyplot as plt
 import sys
 
 inp_path = "/gpfs/home/lt2504/pathology-extractor-bert/data/splits/active/"
-out_path = "/gpfs/home/lt2504/pathology-extractor-bert/data/splits/acitve_out/"
+out_path = "/gpfs/home/lt2504/pathology-extractor-bert/data/raw/selected/"
 default_model_path = "/gpfs/home/lt2504/pathology-extractor-bert/models/pretrained/historical/active_learn_init/checkpoint-2352/"
 default_tokenizer_path = "/gpfs/home/lt2504/pathology-extractor-bert/src/tmp/nyutron-big"
 
 impression_idx = None
 
 class Points:
-    def __init__(self, X, X_set, texts):
+    def __init__(self, X, X_set, texts, idxs):
         self.X = X
         self.X_set = X_set
         self.texts = texts
+        self.idxs = idxs
         self.min_dist, self.dist_idxs = self.init_distance()
 
     def pprint(self):
@@ -82,15 +75,27 @@ class Points:
 
     def update_distance(self, new_add):
         dists = []
-        self.X_set.append(new_add)
+        self.X_set = np.vstack([self.X_set, new_add])
         for cord, dist in zip(self.X, self.min_dist):
-          dists.append(min(dist, pairwise_distances([cord], [new_add])))
+            p = min(dist, int(pairwise_distances([cord], [new_add])[0].item()))
+
+            dists.append(int(p))
+
         self.min_dist = np.array(dists)
         return self.min_dist
 
 def reduce_max(dists, texts):
     idx = np.argmax(dists)
     return idx, texts[idx]
+
+def create_dataframe(strings_list, column_name='Strings'):
+    # Create a dictionary with the specified column name and the list of strings
+    data = {column_name: strings_list}
+    
+    # Create a Pandas DataFrame from the dictionary
+    df = pd.DataFrame(data)
+    
+    return df
 
 
 
@@ -100,7 +105,6 @@ parser.add_argument('--budget', help='budget to be chosen', type=int, default=10
 parser.add_argument('--ifname', help='output file name', type=str, default='budget.csv')
 parser.add_argument('--ofname', help='output file name', type=str, default='train.csv')
 parser.add_argument('--outdir', help='output directory', type=str, default=out_path)
-parser.add_argument('--encoder', help='Type of encoder to generate embeddings', type=str, default='sentence')
 parser.add_argument('--text_pth', help='budget to be chosen', type=str, default='/gpfs/home/lt2504/pathology-extractor-bert/data/raw/historical_report_parts_filter/1_historical_reports.csv')
 
 
@@ -131,21 +135,22 @@ x3 = np.load(msk_10k_path + "out_3.npy")
 
 X_set = np.vstack((x1,x2,x3))
 
-texts = pd.read_csv(opts.text_pth)["text"].to_list()
+data_choose = pd.read_csv(opts.text_pth)
+texts = data_choose["text"].to_list()
+idxs = data_choose.index.to_list()
 
 print(texts[0])
 
-p = Points(X, X_set, texts)
+p = Points(X, X_set, texts, idxs)
+
+texts = []
 
 for i in range(BUDGET):
     distance, idx, text = p.get_max()
-    print(distance)
-    print(idx)
-    print(text)
+    p.update_distance(X[idx])
+    texts.append(text)
     p.pop()
 
 
-
-
-
-
+df = create_dataframe(texts, column_name='text')
+df.to_csv(opts.outdir+opts.ofname , index = False)
