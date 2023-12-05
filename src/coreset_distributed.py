@@ -28,10 +28,6 @@ import matplotlib.pyplot as plt
 
 import sys
 
-inp_path = "/gpfs/home/lt2504/pathology-extractor-bert/data/splits/active/"
-out_path = "/gpfs/home/lt2504/pathology-extractor-bert/data/raw/selected/"
-default_model_path = "/gpfs/home/lt2504/pathology-extractor-bert/models/pretrained/historical/active_learn_init/checkpoint-2352/"
-default_tokenizer_path = "/gpfs/home/lt2504/pathology-extractor-bert/src/tmp/nyutron-big"
 
 impression_idx = None
 
@@ -104,8 +100,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--budget', help='budget to be chosen', type=int, default=1000)
 parser.add_argument('--ifname', help='output file name', type=str, default='budget.csv')
 parser.add_argument('--ofname', help='output file name', type=str, default='train.csv')
-parser.add_argument('--outdir', help='output directory', type=str, default=out_path)
-parser.add_argument('--text_pth', help='budget to be chosen', type=str, default='/gpfs/home/lt2504/pathology-extractor-bert/data/raw/historical_report_parts_filter/1_historical_reports.csv')
+parser.add_argument('--outdir', help='output directory', type=str, default="out.csv")
+parser.add_argument('--text_pth', help='path to text files', type=str, default='/gpfs/data/chopralab/lt2504/pathology-extractor-bert/data/raw/historical_report_parts_filter/1_historical_reports.csv') 
 
 
 
@@ -127,7 +123,7 @@ else:
     
 X = np.load(input_file)
 
-msk_10k_path = "/gpfs/home/lt2504/pathology-extractor-bert/embeddings_10k/"
+msk_10k_path = "/gpfs/data/chopralab/lt2504/pathology-extractor-bert/embedding_10k/"
 
 x1 = np.load(msk_10k_path + "out_1.npy")
 x2 = np.load(msk_10k_path + "out_2.npy")
