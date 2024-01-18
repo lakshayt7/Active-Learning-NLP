@@ -132,21 +132,20 @@ x3 = np.load(msk_10k_path + "out_3.npy")
 X_set = np.vstack((x1,x2,x3))
 
 data_choose = pd.read_csv(opts.text_pth)
-texts = data_choose["text"].to_list()
+accessions = data_choose["accession"].to_list()
 idxs = data_choose.index.to_list()
 
-print(texts[0])
 
-p = Points(X, X_set, texts, idxs)
+p = Points(X, X_set, accessions, idxs)
 
-texts = []
+accessions  = []
 
 for i in range(BUDGET):
     distance, idx, text = p.get_max()
     p.update_distance(X[idx])
-    texts.append(text)
+    accessions.append(text)
     p.pop()
 
 
-df = create_dataframe(texts, column_name='text')
+df = create_dataframe(accessions, column_name='text')
 df.to_csv(opts.outdir+opts.ofname , index = False)
