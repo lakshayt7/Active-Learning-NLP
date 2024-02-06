@@ -73,9 +73,9 @@ class Points:
         dists = []
         self.X_set = np.vstack([self.X_set, new_add])
         for cord, dist in zip(self.X, self.min_dist):
-            p = min(dist, int(pairwise_distances([cord], [new_add])[0].item()))
+            p = min(dist, pairwise_distances([cord], [new_add])[0].item())
 
-            dists.append(int(p))
+            dists.append(float(p))
 
         self.min_dist = np.array(dists)
         return self.min_dist
@@ -144,7 +144,7 @@ for i in range(BUDGET):
     distance, idx, text = p.get_max()
     p.update_distance(X[idx])
     accessions.append(text)
-    p.pop()
+    #p.pop()
 
 
 df = create_dataframe(accessions, column_name='text')
